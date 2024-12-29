@@ -2,38 +2,50 @@
 
 namespace App\Services;
 
+use App\Events\ProcessDuplicationEvent;
+use App\Jobs\DuplicateNodeJob;
 use App\Models\Node;
 use App\Repositories\NodeRepository;
+use Illuminate\Support\Facades\DB;
 
-class DuplicationService
+readonly class DuplicationService
 {
     public function __construct(
-        readonly NodeRepository $nodeRepository
+        public NodeRepository $nodeRepository
     ) {}
 
     // based on Breadth-First Search algorithm
-    public function duplicate(Node $node, Node $parent = null, bool $first = false): bool
+    public function duplicate(Node $node, ?int $parentId = null): void
     {
-        $nodeDuplicated = $this->addNode($node, $parent);
+        // transaction guarantees security and atomicity of operation
+        $nodeDuplicated = DB::transaction(function () use ($node, $parentId) {
+            return $this->addNodeRaw($node, $parentId);
+        });
 
         $childrens = $this->nodeRepository->findChildrensById($node);
         foreach ($childrens as $child) {
-            $this->duplicate($child, $nodeDuplicated);
+            DuplicateNodeJob::dispatch($child, $nodeDuplicated);
         }
-
-        return true;
     }
 
-    private function addNode(Node $node, ?Node $parent = null): Node
+    private function addNodeRaw(Node $node, ?int $parentId = null): int
     {
-        $newNode = new Node();
-        $newNode->type_node_id = $node->type_node_id;
-        $newNode->parent_id = $parent?->id;
-        $newNode->media = $node->media;
-        $newNode->block_field = $node->block_field;
+        // Prepare the data for insertion
+        $data = [
+            'type_node_id' => $node->type_node_id,
+            'parent_id' => $parentId,
+            'media' => $node->media,
+            'block_field' => $node->block_field,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ];
 
-        $newNode->save();
+        // Use a raw query to insert the data into the database
+        $newNodeId = DB::table('nodes')->insertGetId($data);
 
-        return $newNode;
+        // Dispatch an event to handle post-processing
+        ProcessDuplicationEvent::dispatch($newNodeId);
+
+        return $newNodeId;
     }
 }

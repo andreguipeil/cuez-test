@@ -2,10 +2,8 @@
 
 namespace App\Console\Commands;
 
+use App\Jobs\DuplicateNodeJob;
 use App\Models\Node;
-use App\Models\TypeNode;
-use App\Repositories\NodeRepository;
-use App\Services\DuplicationService;
 use Exception;
 use Illuminate\Console\Command;
 
@@ -25,13 +23,6 @@ class DuplicateCommand extends Command
      */
     protected $description = 'Command description';
 
-    public function __construct(
-        private readonly NodeRepository $nodeRepository,
-        private readonly DuplicationService $duplicationService,
-    ) {
-        parent::__construct();
-    }
-
     /**
      * Execute the console command.
      */
@@ -42,19 +33,10 @@ class DuplicateCommand extends Command
 
         try {
             $nodeRoot = Node::findOrFail($rootId);
-            $parent = null;
 
-            // If the root node has a parent,
-            // we get the parent node to keep the reference
-            // just to keep the reference of parent node
-            // the duplication is always top -> down
-            // top = root node
-            // down = nodes childrens
-            if ($nodeRoot->parent_id !== null) {
-                $parent = $this->nodeRepository->findById($nodeRoot->parent_id);
-            }
-
-            $this->duplicationService->duplicate($nodeRoot, $parent, true);
+            // Dispatch the root duplication job
+            DuplicateNodeJob::dispatch($nodeRoot, $nodeRoot->parent_id);
+            $this->info('Duplication job enqueued');
         } catch (Exception $e) {
             $this->info($e->getMessage());
         }
