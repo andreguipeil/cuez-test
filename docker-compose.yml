@@ -8,7 +8,6 @@ services:
             args:
                 - APP_ENV=${APP_ENV}
                 - UID=${UID}
-                - INSTALL_XDEBUG=${INSTALL_XDEBUG}
         env_file:
             - .env
         expose:
