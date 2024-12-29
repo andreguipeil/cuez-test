@@ -127,6 +127,11 @@ return [
             'path' => storage_path('logs/laravel.log'),
         ],
 
+        'duplication' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/duplication.log'),
+            'level' => 'info',
+        ],
     ],
 
 ];
