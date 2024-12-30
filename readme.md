@@ -40,7 +40,7 @@ This project contains the docker structure to create new project in laravel/symf
 ### About the project:
 - This application will handle the action to duplicate a collection of objects, which means that if we start with node 1, all trees below him will be duplicated.
 
-- To solve the problem I used an inspiration into the algorithm of breath first search and using asynchronous jobs from Laravel to handle with de problem.
+- To solve the problem I used an inspiration into the algorithm of breath first search and using asynchronous jobs from Laravel to handle with the problem.
 
 
 ### Installation
@@ -48,7 +48,7 @@ This project contains the docker structure to create new project in laravel/symf
 
 #### step 1
 ```
-git clone 
+git clone git@github.com:andreguipeil/cuez-test.git
 cp .env.dist .env
 ```
 
@@ -56,6 +56,7 @@ cp .env.dist .env
 To start the containers
 ````bash
 docker-compose up -d --build
+docker-compose exec application composer install
 ````
 
 To stop
